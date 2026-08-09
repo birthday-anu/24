@@ -88,7 +88,7 @@ const CONTENT = {
     { src: "assets/images/memory-1.jpg", caption: "One of those days I wish had lasted a little longer.", meta: "", rotate: -4 },
     { src: "assets/images/memory-2.jpg", caption: "This one, obviously, because of the food.", meta: "", rotate: 3 },
     { src: "assets/images/memory-3.jpg", caption: "You weren't supposed to see me take this photo.", meta: "", rotate: -2 },
-    { src: "assets/images/memory-4.jpg", caption: "Still one of my favorite random afternoons.", meta: "", rotate: 5 },
+    { src: "assets/images/memory-4.jpg", caption: "Still one of my favorite evenings.", meta: "", rotate: 5 },
     { src: "assets/images/memory-5.jpg", caption: "You have no idea how often I look at this one.", meta: "", rotate: -3 },
     { src: "assets/images/memory-6.jpg", caption: "Proof that you can't take a bad photo even when you try.", meta: "", rotate: 2 },
   ],
