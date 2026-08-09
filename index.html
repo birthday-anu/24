@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Anuradha's Little Birthday World 🎀</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="ambient"></div>
+<div id="progress-hearts" class="hide"></div>
+<audio id="bg-music" loop></audio>
+
+<!-- ============ 1. ENTRANCE ============ -->
+<section id="screen-entrance" class="screen">
+  <div class="screen-inner burst" id="entrance-burst">
+    <div class="envelope">💌</div>
+    <div class="entrance-whisper" id="entrance-whisper"></div>
+    <div class="entrance-line" id="entrance-line"></div>
+    <button class="btn btn--wiggle" id="entrance-btn"></button>
+  </div>
+</section>
+
+<!-- ============ 2. LOADING ============ -->
+<section id="screen-loading" class="screen hidden">
+  <div class="screen-inner">
+    <div class="loading-title" id="loading-title"></div>
+    <ul class="checklist" id="loading-checklist"></ul>
+    <div class="error-box" id="loading-error">
+      <div class="err-title" id="err-title"></div>
+      <div class="err-sub" id="err-sub"></div>
+    </div>
+    <button class="btn hidden" id="loading-continue"></button>
+  </div>
+</section>
+
+<!-- ============ 3. REVEAL ============ -->
+<section id="screen-reveal" class="screen hidden">
+  <div class="screen-inner">
+    <div class="cake-emoji">🎂</div>
+    <div id="reveal-lines"></div>
+    <div class="reveal-sub" id="reveal-sub"></div>
+    <button class="btn btn--wiggle" id="reveal-btn"></button>
+  </div>
+</section>
+
+<!-- ============ 4. DASHBOARD ============ -->
+<section id="screen-dashboard" class="screen hidden">
+  <div class="dashboard-frame screen-inner">
+    <div class="dashboard-title" id="dash-title"></div>
+    <div class="dashboard-subtitle" id="dash-subtitle"></div>
+    <div class="card-grid" id="dash-grid"></div>
+    <button class="dash-bonus" id="dash-bonus"></button>
+    <div class="unlock-count" id="unlock-count"></div>
+  </div>
+</section>
+
+<!-- ============ MESSAGE ============ -->
+<section id="screen-message" class="screen hidden">
+  <div class="screen-inner">
+    <div class="mini-header"><button class="back-link" id="message-back-top" onclick="document.getElementById('message-back').click()">← Back</button></div>
+    <div class="mini-title" id="message-title"></div>
+    <div id="message-body"></div>
+    <button class="btn btn--soft" id="message-back"></button>
+  </div>
+</section>
+
+<!-- ============ MEMORIES ============ -->
+<section id="screen-memories" class="screen hidden">
+  <div class="screen-inner" style="max-width:640px;">
+    <div class="mini-header">
+      <button class="back-link" onclick="document.getElementById('memories-back').click()">← Back</button>
+      <span class="hint">tap a photo</span>
+    </div>
+    <div class="mini-title">📸 Our Memories</div>
+    <div class="polaroid-desk" id="polaroid-desk"></div>
+    <button class="btn btn--soft" id="memories-back">Back to control room</button>
+  </div>
+</section>
+
+<div class="lightbox hidden" id="lightbox">
+  <div class="lightbox-card">
+    <div class="photo-slot" id="lightbox-photo"></div>
+    <div class="caption" id="lightbox-caption"></div>
+    <div class="meta" id="lightbox-meta"></div>
+    <button class="btn btn--soft lightbox-close" id="lightbox-close">Close</button>
+  </div>
+</div>
+
+<!-- ============ CAKE ============ -->
+<section id="screen-cake" class="screen hidden">
+  <div class="screen-inner">
+    <div class="mini-header"><button class="back-link" onclick="document.getElementById('cake-back').click()">← Back</button></div>
+    <div class="mini-title" id="cake-title"></div>
+    <div class="cake-scene">
+      <div class="candles" id="candles"></div>
+      <div class="smoke" id="smoke">💨</div>
+      <div class="cake-body">🎂</div>
+    </div>
+    <button class="btn btn--wiggle" id="cake-btn"></button>
+    <div class="wish-saved hidden" id="cake-after">
+      <div class="lock-title" id="after-title"></div>
+      <div class="lock-sub" id="after-sub"></div>
+    </div>
+    <button class="btn btn--soft" id="cake-back">Back to control room</button>
+  </div>
+</section>
+
+<!-- ============ ADORE ============ -->
+<section id="screen-adore" class="screen hidden">
+  <div class="screen-inner" style="max-width:640px;">
+    <div class="mini-header"><button class="back-link" onclick="document.getElementById('adore-back').click()">← Back</button></div>
+    <div class="mini-title">💗 Things I Adore</div>
+    <div class="adore-grid" id="adore-grid"></div>
+    <button class="btn btn--soft" id="adore-back">Back to control room</button>
+  </div>
+</section>
+
+<!-- ============ QUIZ (bonus) ============ -->
+<section id="screen-quiz" class="screen hidden">
+  <div class="screen-inner">
+    <div class="mini-header"><button class="back-link" onclick="document.getElementById('quiz-back').click()">← Back</button></div>
+    <div class="mini-title">🤔 Do You Even Know Yourself?</div>
+    <div class="quiz-card">
+      <div class="quiz-progress" id="quiz-progress"></div>
+      <div class="quiz-q" id="quiz-q"></div>
+      <div class="quiz-options" id="quiz-options"></div>
+      <div class="quiz-reaction" id="quiz-reaction"></div>
+    </div>
+    <button class="btn btn--soft" id="quiz-back">Back to control room</button>
+  </div>
+</section>
+
+<!-- ============ PREDICTION ============ -->
+<section id="screen-prediction" class="screen hidden">
+  <div class="screen-inner">
+    <div class="mini-header"><button class="back-link" onclick="document.getElementById('predict-back').click()">← Back</button></div>
+    <div class="mini-title">🔮 Birthday Prediction Machine</div>
+    <button class="btn btn--wiggle" id="predict-btn"></button>
+    <ul class="predict-steps hidden" id="predict-loading"></ul>
+    <div class="prediction-result hidden" id="predict-result">
+      <h3 id="predict-result-title"></h3>
+      <div class="intro" id="predict-result-intro"></div>
+      <ul id="predict-items"></ul>
+      <button class="btn" id="predict-confirm" style="margin-top:14px;" onclick="document.getElementById('predict-back').click()"></button>
+    </div>
+    <button class="btn btn--soft" id="predict-back">Back to control room</button>
+  </div>
+</section>
+
+<!-- ============ MYSTERY BOX ============ -->
+<section id="screen-mystery" class="screen hidden">
+  <div class="screen-inner">
+    <div class="mini-header"><button class="back-link" onclick="document.getElementById('mystery-back').click()">← Back</button></div>
+    <div class="mini-title" id="mystery-title"></div>
+    <div class="hint" id="mystery-locked-msg"></div>
+    <div class="gift-box" id="gift-box">🎁</div>
+    <div class="hint" id="mystery-instruction"></div>
+    <button class="btn btn--soft" id="mystery-back">Back to control room</button>
+  </div>
+</section>
+
+<!-- ============ LETTER ============ -->
+<section id="screen-letter" class="screen hidden">
+  <div class="screen-inner">
+    <div class="letter-envelope">💌</div>
+    <div class="letter-paper">
+      <div class="sal" id="letter-sal"></div>
+      <div id="letter-body"></div>
+      <div class="signoff" id="letter-signoff"></div>
+      <div class="signature" id="letter-signature"></div>
+    </div>
+    <button class="btn btn--wiggle" id="letter-next"></button>
+  </div>
+</section>
+
+<!-- ============ FINAL SURPRISE ============ -->
+<section id="screen-final" class="screen hidden">
+  <div class="stars-bg" id="final-stars"></div>
+  <div class="screen-inner" style="position:relative; z-index:1;">
+    <div class="final-line" id="final-line1"></div>
+    <div class="final-line" id="final-line2"></div>
+    <button class="btn hidden" id="final-btn"></button>
+    <div class="hidden" id="final-video-wrap">
+      <div class="video-frame" id="video-frame"></div>
+      <button class="btn hidden" id="final-continue" style="margin-top:18px;">Continue →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ENDING ============ -->
+<section id="screen-ending" class="screen hidden">
+  <div class="screen-inner">
+    <div class="mini-title" id="ending-title"></div>
+    <div id="ending-sub"></div>
+    <button class="btn btn--soft" id="ending-replay" style="margin-top:20px;"></button>
+  </div>
+</section>
+
+<script src="js/content.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
