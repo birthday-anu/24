@@ -19,6 +19,13 @@ const CONTENT = {
     title: "Something's coming... 🎀",
     sub: "A little birthday world for Anuradha unlocks in:",
     afterUnlockHint: "It's time. 👀",
+    // Manual override: open the site with ?unlock=KEY appended to the URL
+    // to skip the countdown entirely, regardless of real time. Only use
+    // this yourself if the timer breaks — the normal link stays locked
+    // for her since she won't have this in the URL.
+    // e.g. index.html?unlock=cake24
+    skipParam: "unlock",
+    skipValue: "cake24",
   },
 
   // ---------- 1. Entrance ----------

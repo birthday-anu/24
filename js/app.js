@@ -238,6 +238,15 @@ function initGate() {
 }
 
 async function runGateCheck() {
+  // Manual override: ?unlock=KEY in the URL bypasses the countdown entirely.
+  // Use this only for yourself if the timer/network check ever breaks —
+  // the normal shared link has no query param, so it stays locked for her.
+  const params = new URLSearchParams(window.location.search);
+  if (params.get(CONTENT.gate.skipParam) === CONTENT.gate.skipValue) {
+    showScreen("entrance");
+    return;
+  }
+
   showScreen("gate");
   document.getElementById("gate-sub").textContent = "Checking the time...";
   document.getElementById("countdown-grid").style.visibility = "hidden";
