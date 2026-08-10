@@ -75,6 +75,143 @@ function startMusicIfAny() {
 }
 
 /* ============================================================
+   0. GATE / COUNTDOWN
+   Site is locked until CONTENT.gate.unlockAt, in fixed India Standard
+   Time (UTC+5:30). The unlock check is based on REAL TIME FETCHED FROM
+   THE INTERNET, not the visitor's device clock — so changing your
+   system clock does not bypass the lock.
+
+   How it works:
+   1. On load, fetch the current time from a public time API.
+   2. Compute serverOffsetMs = (network time) - (device time) once.
+   3. From then on, "now" = Date.now() + serverOffsetMs. This stays
+      accurate every second without re-fetching, because we're only
+      using the device clock to measure ELAPSED time (which ticks
+      normally even if someone changes the clock's displayed date —
+      OS clock changes don't rewind a page's running timers), not to
+      read an absolute "what time is it" value.
+   4. If every time API fails (offline, blocked, API down), we fall
+      back to the device clock rather than leaving the page stuck
+      forever. This is a deliberate trade-off: a small hole for
+      network failures, in exchange for the site never being
+      permanently unusable if an API changes or goes down.
+   ============================================================ */
+let gateInterval = null;
+let serverOffsetMs = 0; // (network time) - (device time), 0 until synced
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // IST = UTC+5:30, no DST
+
+// Each provider returns an absolute UTC epoch in ms, or throws.
+const TIME_PROVIDERS = [
+  async () => {
+    // worldtimeapi.org — gives unixtime directly, no conversion needed.
+    const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata", { cache: "no-store" });
+    if (!res.ok) throw new Error("worldtimeapi bad response");
+    const data = await res.json();
+    if (typeof data.unixtime !== "number") throw new Error("worldtimeapi missing unixtime");
+    return data.unixtime * 1000;
+  },
+  async () => {
+    // timeapi.io — gives IST wall-clock fields, convert to UTC epoch.
+    const res = await fetch("https://timeapi.io/api/Time/current/zone?timeZone=Asia/Kolkata", { cache: "no-store" });
+    if (!res.ok) throw new Error("timeapi.io bad response");
+    const d = await res.json();
+    if (d.year == null) throw new Error("timeapi.io missing fields");
+    return Date.UTC(d.year, d.month - 1, d.day, d.hour, d.minute, d.seconds || 0) - IST_OFFSET_MS;
+  },
+  async () => {
+    // worldclockapi.com — gives UTC ISO string directly.
+    const res = await fetch("http://worldclockapi.com/api/json/utc/now", { cache: "no-store" });
+    if (!res.ok) throw new Error("worldclockapi bad response");
+    const d = await res.json();
+    if (!d.currentDateTime) throw new Error("worldclockapi missing field");
+    return new Date(d.currentDateTime).getTime();
+  },
+];
+
+async function syncNetworkTime() {
+  for (const provider of TIME_PROVIDERS) {
+    try {
+      const before = Date.now();
+      const networkEpoch = await provider();
+      const after = Date.now();
+      // Correct for request round-trip by using the midpoint device time.
+      const deviceMidpoint = (before + after) / 2;
+      serverOffsetMs = networkEpoch - deviceMidpoint;
+      return true; // synced successfully
+    } catch (e) {
+      continue; // try next provider
+    }
+  }
+  serverOffsetMs = 0; // all providers failed — fall back to device clock
+  return false;
+}
+
+function nowMs() {
+  return Date.now() + serverOffsetMs;
+}
+
+function getUnlockEpoch() {
+  const [y, m, d, h, min] = CONTENT.gate.unlockAt;
+  return Date.UTC(y, m, d, h, min, 0) - IST_OFFSET_MS;
+}
+
+function isUnlocked() {
+  return nowMs() >= getUnlockEpoch();
+}
+
+function pad2(n) { return String(n).padStart(2, "0"); }
+
+function tickCountdown() {
+  const diff = getUnlockEpoch() - nowMs();
+  if (diff <= 0) {
+    clearInterval(gateInterval);
+    gateInterval = null;
+    document.getElementById("gate-sub").textContent = CONTENT.gate.afterUnlockHint;
+    setTimeout(() => {
+      showScreen("entrance");
+    }, 900);
+    return;
+  }
+  const totalSec = Math.floor(diff / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  document.getElementById("cd-days").textContent = pad2(days);
+  document.getElementById("cd-hours").textContent = pad2(hours);
+  document.getElementById("cd-mins").textContent = pad2(mins);
+  document.getElementById("cd-secs").textContent = pad2(secs);
+}
+
+function initGate() {
+  document.getElementById("gate-title").textContent = CONTENT.gate.title;
+  document.getElementById("gate-sub").textContent = CONTENT.gate.sub;
+}
+
+async function runGateCheck() {
+  showScreen("gate");
+  document.getElementById("gate-sub").textContent = "Checking the time...";
+  document.getElementById("countdown-grid").style.visibility = "hidden";
+
+  await syncNetworkTime();
+
+  document.getElementById("countdown-grid").style.visibility = "visible";
+  document.getElementById("gate-sub").textContent = CONTENT.gate.sub;
+
+  if (isUnlocked()) {
+    showScreen("entrance");
+    return;
+  }
+  tickCountdown();
+  gateInterval = setInterval(tickCountdown, 1000);
+
+  // Re-sync every 5 minutes in case the first attempt silently fell back
+  // to the device clock (e.g. a transient network blip) — this gives it
+  // repeated chances to pick up real network time during the wait.
+  setInterval(() => { if (gateInterval) syncNetworkTime(); }, 5 * 60 * 1000);
+}
+
+/* ============================================================
    1. ENTRANCE
    ============================================================ */
 function initEntrance() {
@@ -580,7 +717,7 @@ function initEnding() {
 
 /* ---------- show/hide the persistent heart bar depending on screen ---------- */
 function wireHeartVisibility() {
-  const hideOn = ["entrance", "loading", "reveal", "final", "ending"];
+  const hideOn = ["gate", "entrance", "loading", "reveal", "final", "ending"];
   const observer = new MutationObserver(() => {
     const active = [...document.querySelectorAll(".screen")].find(s => !s.classList.contains("hidden"));
     const bar = document.getElementById("progress-hearts");
@@ -596,6 +733,7 @@ function wireHeartVisibility() {
    ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
   startAmbient();
+  initGate();
   initEntrance();
   initLoading();
   initReveal();
@@ -611,5 +749,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initEnding();
   wireHeartVisibility();
   renderProgressHearts();
-  showScreen("entrance");
+  runGateCheck();
 });

@@ -12,8 +12,23 @@
 <div id="progress-hearts" class="hide"></div>
 <audio id="bg-music" loop></audio>
 
+<!-- ============ 0. GATE / COUNTDOWN ============ -->
+<section id="screen-gate" class="screen hidden">
+  <div class="screen-inner">
+    <div class="gate-icon">🎀</div>
+    <div class="mini-title" id="gate-title"></div>
+    <div class="hint" id="gate-sub" style="font-size:15px;"></div>
+    <div class="countdown-grid" id="countdown-grid">
+      <div class="countdown-unit"><span class="num" id="cd-days">00</span><span class="label">days</span></div>
+      <div class="countdown-unit"><span class="num" id="cd-hours">00</span><span class="label">hrs</span></div>
+      <div class="countdown-unit"><span class="num" id="cd-mins">00</span><span class="label">min</span></div>
+      <div class="countdown-unit"><span class="num" id="cd-secs">00</span><span class="label">sec</span></div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ 1. ENTRANCE ============ -->
-<section id="screen-entrance" class="screen">
+<section id="screen-entrance" class="screen hidden">
   <div class="screen-inner burst" id="entrance-burst">
     <div class="envelope">💌</div>
     <div class="entrance-whisper" id="entrance-whisper"></div>

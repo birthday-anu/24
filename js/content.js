@@ -10,6 +10,17 @@ const CONTENT = {
   age: 24,
   from: "Kshitiz",
 
+  // ---------- 0. Gate / countdown ----------
+  // Site stays locked until this date/time in INDIA STANDARD TIME (IST,
+  // UTC+5:30) — fixed regardless of the visitor's device timezone or clock.
+  // Format: [year, monthIndex(0-11), day, hour, minute] — all in IST.
+  gate: {
+    unlockAt: [2026, 7, 17, 0, 0], // Aug 17, 2026, 00:00 IST
+    title: "Something's coming... 🎀",
+    sub: "A little birthday world for Anuradha unlocks in:",
+    afterUnlockHint: "It's time. 👀",
+  },
+
   // ---------- 1. Entrance ----------
   entrance: {
     whisper: "Psst... 👀",
@@ -169,7 +180,7 @@ const CONTENT = {
     salutation: `Dear ${'Anuradha'},`,
     // Replace this paragraph-by-paragraph with your real letter.
     body: [
-      "Happy birthday. Twenty-four looks good on you already, and it's not even 9am yet.",
+      "Happy birthday. Twenty-four looks good on you already, and it's not even 6:23am yet.",
       "I built this whole ridiculous thing because you deserve more than a text that says 'happy bday 🎉' — you deserve candles that are a fire hazard, a quiz you're forced to ace, and a control room with your name on it.",
       "Somewhere between the jokes on this site, I mean every word. I love how seriously you take the things you care about, how you notice buildings the rest of us walk past without seeing, and how a good meal can turn your whole day around. I love that you’d bring home every stray dog in the city if you could. There’s something ridiculously endearing about how soft your heart is, especially when you’re not even trying to show it.",
       "This year, I hope you build the things you've been sketching in your head. I hope you find more food worth getting excited about. I hope every stray you meet gets a good day because of you. And I hope, through all of it, I get to be around for most of the story.",
