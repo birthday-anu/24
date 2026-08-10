@@ -141,7 +141,15 @@ const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000; // IST = UTC+5:30, no DST
 // Each provider returns an absolute UTC epoch in ms, or throws.
 const TIME_PROVIDERS = [
   async () => {
-    // worldtimeapi.org — gives unixtime directly, no conversion needed.
+    // time.now — confirmed working, same response shape as worldtimeapi.org.
+    const res = await fetch("https://time.now/developer/api/timezone/Asia/Kolkata", { cache: "no-store" });
+    if (!res.ok) throw new Error("time.now bad response");
+    const data = await res.json();
+    if (typeof data.unixtime !== "number") throw new Error("time.now missing unixtime");
+    return data.unixtime * 1000;
+  },
+  async () => {
+    // worldtimeapi.org — same schema, kept as a fallback (has had uptime issues).
     const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata", { cache: "no-store" });
     if (!res.ok) throw new Error("worldtimeapi bad response");
     const data = await res.json();
