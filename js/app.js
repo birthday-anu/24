@@ -7,6 +7,7 @@ const state = {
   visited: { message: false, memories: false, cake: false, adore: false, prediction: false },
   mysteryOpened: false,
   musicStarted: false,
+  currentWish: "",
 };
 
 const REQUIRED = ["message", "memories", "cake", "adore", "prediction"];
@@ -72,6 +73,43 @@ function startMusicIfAny() {
   audio.volume = 0.5;
   audio.play().catch(() => {});
   state.musicStarted = true;
+}
+
+/* ============================================================
+   WISH OF THE VISIT
+   A new message from CONTENT.wishes shows each time she opens the site.
+   Uses a shuffled queue stored in localStorage so nothing repeats until
+   every wish has been shown once, then it reshuffles automatically.
+   Falls back to a plain random pick (no persistence) if localStorage
+   is unavailable — e.g. private/incognito mode in some browsers.
+   ============================================================ */
+const WISH_QUEUE_KEY = "anuradha_wish_queue_v1";
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getNextWish() {
+  const pool = CONTENT.wishes;
+  if (!pool || pool.length === 0) return "";
+
+  try {
+    let queue = JSON.parse(localStorage.getItem(WISH_QUEUE_KEY) || "[]");
+    if (!Array.isArray(queue) || queue.length === 0) {
+      queue = shuffle([...Array(pool.length).keys()]);
+    }
+    const index = queue.shift();
+    localStorage.setItem(WISH_QUEUE_KEY, JSON.stringify(queue));
+    return pool[index];
+  } catch (e) {
+    // localStorage blocked — just pick something random, no memory of past picks.
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
 }
 
 /* ============================================================
@@ -186,6 +224,9 @@ function tickCountdown() {
 function initGate() {
   document.getElementById("gate-title").textContent = CONTENT.gate.title;
   document.getElementById("gate-sub").textContent = CONTENT.gate.sub;
+  const labels = CONTENT.wishBanner.labels;
+  document.getElementById("wish-label").textContent = labels[Math.floor(Math.random() * labels.length)];
+  document.getElementById("wish-text").textContent = state.currentWish;
 }
 
 async function runGateCheck() {
@@ -733,6 +774,7 @@ function wireHeartVisibility() {
    ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
   startAmbient();
+  state.currentWish = getNextWish();
   initGate();
   initEntrance();
   initLoading();

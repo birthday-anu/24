@@ -65,7 +65,61 @@ const CONTENT = {
     bonus: { id: "quiz", icon: "🤔", label: "Bonus: Do You Even Know Yourself?" },
   },
 
-  // ---------- Message card (short teaser, NOT the final letter) ----------
+  // ---------- Wish of the visit ----------
+  // A new one shows each time she opens the site. Pulled from this pool
+  // with no repeats until all have been shown once, then it reshuffles.
+  // EDIT ME: swap/add/remove — no fixed count required, code adapts.
+  wishBanner: {
+    // A few variants — one picked at random each visit, alongside the wish text.
+    labels: [
+      "An advance birthday wish 🎀",
+      "Happy birthday, in advance ✨",
+      "A little early, but here's one anyway 👀",
+      "Jumping the gun a bit — happy birthday 🎉",
+    ],
+  },
+  wishes: [
+    "May your coffee be strong and your architecture critiques be gentle.",
+    "Here's to another year of you redesigning buildings in your head that you'll never admit to designing.",
+    "May every stray dog you meet this year know you're a soft touch.",
+    "Wishing you a year where the good food finds you, not the other way around.",
+    "May your blueprints be straight and your birthday be crooked with cake.",
+    "Here's to you being right about being right, most of the time.",
+    "May this year bring you at least one perfect meal you still talk about in December.",
+    "Wishing you patience for people slower than you and snacks for when that patience runs out.",
+    "May every dog you pass on the street look at you like you're the main character.",
+    "Here's to your creativity never running out of walls to redesign.",
+    "May you find a reason to laugh your real laugh at least once this week.",
+    "Wishing you fewer deadlines and more dessert.",
+    "May your kindness come back to you in ways you don't expect.",
+    "Here's to a year where your stubbornness works entirely in your favor.",
+    "May you build something this year — literal or otherwise — that makes you proud.",
+    "Wishing you good light, good food, and good company, roughly in that order.",
+    "May every plan you make actually survive contact with real life this year.",
+    "Here's to you adopting exactly the number of animals your apartment lease allows. Or doesn't.",
+    "May your birthday cake be exactly as many candles as it takes to set off a smoke alarm.",
+    "Wishing you a year that's kinder to you than you are to yourself.",
+    "May you never run out of new restaurants to be suspiciously excited about.",
+    "Here's to your eye for beautiful things — buildings, food, and otherwise.",
+    "Wishing you naps that feel earned and mornings that don't.",
+    "May this year hand you at least one genuinely great story to tell.",
+    "Here's to you being effortlessly, infuriatingly good at things you just started doing.",
+    "Wishing you a year with fewer things to worry about and more things to enjoy.",
+    "May your playlist stay good and your wifi stay faster.",
+    "Here's to the buildings you'll notice today that everyone else walks right past.",
+    "Wishing you a birthday that feels like it belongs entirely to you.",
+    "May you get exactly the kind of attention you secretly want on your birthday.",
+    "Here's to another year of making ordinary afternoons feel like something worth remembering.",
+    "Wishing you good weather for whatever you're planning and bad weather for whatever you're avoiding.",
+    "May your ambition and your appetite grow at exactly the same rate.",
+    "Here's to you being someone's favorite person to text good news to.",
+    "Wishing you a year that surprises you in the good way, repeatedly.",
+    "May every dog, cat, and questionable street animal sense that you mean well.",
+    "Here's to the version of you that exists a year from now — she's going to be even better.",
+    "Wishing you fewer things falling through and more things falling into place.",
+    "May you get away with at least one thing you probably shouldn't have this year.",
+    "Here's to you, exactly as you are, on your 24th trip around the sun.",
+  ],
   message: {
     title: "A tiny message before the chaos begins 💌",
     // EDIT ME: 2-4 short lines. Playful, not the big emotional one — that comes later.
@@ -180,7 +234,7 @@ const CONTENT = {
     salutation: `Dear ${'Anuradha'},`,
     // Replace this paragraph-by-paragraph with your real letter.
     body: [
-      "Happy birthday. Twenty-four looks good on you already, and it's not even 6:23am yet.",
+      "Happy birthday. Twenty-four looks good on you already, and it's not even 9am yet.",
       "I built this whole ridiculous thing because you deserve more than a text that says 'happy bday 🎉' — you deserve candles that are a fire hazard, a quiz you're forced to ace, and a control room with your name on it.",
       "Somewhere between the jokes on this site, I mean every word. I love how seriously you take the things you care about, how you notice buildings the rest of us walk past without seeing, and how a good meal can turn your whole day around. I love that you’d bring home every stray dog in the city if you could. There’s something ridiculously endearing about how soft your heart is, especially when you’re not even trying to show it.",
       "This year, I hope you build the things you've been sketching in your head. I hope you find more food worth getting excited about. I hope every stray you meet gets a good day because of you. And I hope, through all of it, I get to be around for most of the story.",
