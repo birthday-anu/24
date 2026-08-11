@@ -3,6 +3,16 @@
    Vanilla JS, no framework, no build step.
    ============================================================ */
 
+/* ============================================================
+   ACCESSIBILITY: prefers-reduced-motion
+   Checked once; used to skip staggered reveals, ambient generation,
+   and confetti/balloon bursts. CSS also has a blanket override for
+   any animation this JS doesn't explicitly gate.
+   ============================================================ */
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 const state = {
   visited: { message: false, memories: false, cake: false, adore: false, prediction: false },
   mysteryOpened: false,
@@ -13,15 +23,45 @@ const state = {
 const REQUIRED = ["message", "memories", "cake", "adore", "prediction"];
 
 /* ---------- screen navigation ---------- */
+function shiftBackground() {
+  const x = (Math.random() * 16 - 8).toFixed(1);
+  const y = (Math.random() * 16 - 8).toFixed(1);
+  document.body.style.backgroundPosition = `${x}px ${y}px`;
+}
+
 function showScreen(id) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
-  const el = document.getElementById("screen-" + id);
-  if (el) el.classList.remove("hidden");
-  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  const next = document.getElementById("screen-" + id);
+  if (!next) return;
+  const current = [...document.querySelectorAll(".screen")].find(s => !s.classList.contains("hidden"));
+
+  shiftBackground();
+
+  if (!current || current === next || prefersReducedMotion()) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
+    next.classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "auto" });
+    return;
+  }
+
+  current.classList.add("screen-out");
+  setTimeout(() => {
+    current.classList.add("hidden");
+    current.classList.remove("screen-out");
+    next.classList.remove("hidden");
+    next.classList.add("screen-in");
+    window.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => {
+      next.classList.add("screen-in-active");
+    });
+    setTimeout(() => {
+      next.classList.remove("screen-in", "screen-in-active");
+    }, 450);
+  }, 260);
 }
 
 /* ---------- ambient floating hearts/stars ---------- */
 function startAmbient() {
+  if (prefersReducedMotion()) return;
   const layer = document.getElementById("ambient");
   const symbols = ["💗", "✨", "🎀", "⭐"];
   setInterval(() => {
@@ -33,12 +73,13 @@ function startAmbient() {
     el.style.fontSize = (14 + Math.random() * 14) + "px";
     layer.appendChild(el);
     setTimeout(() => el.remove(), 15000);
-  }, 1400);
+  }, 2200);
 }
 
 /* ---------- confetti + balloons ---------- */
 const CONFETTI_COLORS = ["#F3C9D4", "#CBB8E6", "#F4B48A", "#E8B23E", "#3E2244"];
 function burstConfetti(count = 60) {
+  if (prefersReducedMotion()) return;
   for (let i = 0; i < count; i++) {
     const p = document.createElement("div");
     p.className = "confetti-piece";
@@ -51,6 +92,7 @@ function burstConfetti(count = 60) {
   }
 }
 function riseBalloons(count = 8) {
+  if (prefersReducedMotion()) return;
   const emojis = ["🎈"];
   for (let i = 0; i < count; i++) {
     const b = document.createElement("div");
@@ -332,23 +374,37 @@ function initLoading() {
    3. REVEAL
    ============================================================ */
 function runReveal() {
+  const cake = document.querySelector("#screen-reveal .cake-emoji");
+  cake.classList.remove("show");
   const wrap = document.getElementById("reveal-lines");
   wrap.innerHTML = "";
+  const sub = document.getElementById("reveal-sub");
+  sub.classList.remove("show");
+
+  const reduced = prefersReducedMotion();
+  const lineGap = reduced ? 0 : 650;
+  const startDelay = reduced ? 0 : 500;
+
+  setTimeout(() => cake.classList.add("show"), reduced ? 0 : 200);
+
   CONTENT.reveal.lines.forEach((line, i) => {
     const div = document.createElement("div");
     div.className = "reveal-line";
     div.textContent = line;
     wrap.appendChild(div);
-    setTimeout(() => div.classList.add("show"), 200 + i * 350);
+    const isLast = i === CONTENT.reveal.lines.length - 1;
+    setTimeout(() => {
+      div.classList.add("show");
+      if (isLast) {
+        burstConfetti(70);
+        riseBalloons(10);
+      }
+    }, startDelay + i * lineGap);
   });
-  const sub = document.getElementById("reveal-sub");
+
+  const subDelay = startDelay + CONTENT.reveal.lines.length * lineGap + (reduced ? 0 : 400);
   sub.textContent = CONTENT.reveal.sub;
-  sub.classList.remove("show");
-  setTimeout(() => {
-    sub.classList.add("show");
-    riseBalloons(10);
-    burstConfetti(70);
-  }, 200 + CONTENT.reveal.lines.length * 350 + 200);
+  setTimeout(() => sub.classList.add("show"), subDelay);
 }
 function initReveal() {
   const btn = document.getElementById("reveal-btn");
@@ -367,6 +423,26 @@ function renderDashboard() {
   document.getElementById("dash-subtitle").textContent = CONTENT.dashboard.subtitle;
 
   const grid = document.getElementById("dash-grid");
+  const bonusBtn = document.getElementById("dash-bonus");
+  const unlockCount = document.getElementById("unlock-count");
+  const completion = document.getElementById("dash-completion");
+
+  const allDone = allRequiredDone();
+
+  if (allDone && !state.mysteryOpened) {
+    grid.classList.add("hidden");
+    bonusBtn.classList.add("hidden");
+    unlockCount.classList.add("hidden");
+    completion.classList.remove("hidden");
+    renderProgressHearts();
+    return;
+  }
+
+  grid.classList.remove("hidden");
+  bonusBtn.classList.remove("hidden");
+  unlockCount.classList.remove("hidden");
+  completion.classList.add("hidden");
+
   grid.innerHTML = "";
   CONTENT.dashboard.cards.forEach(card => {
     const btn = document.createElement("button");
@@ -381,7 +457,6 @@ function renderDashboard() {
     grid.appendChild(btn);
   });
 
-  const bonusBtn = document.getElementById("dash-bonus");
   bonusBtn.textContent = CONTENT.dashboard.bonus.icon + "  " + CONTENT.dashboard.bonus.label;
   bonusBtn.onclick = () => goToCard("quiz");
 
@@ -416,6 +491,10 @@ function goToCard(id) {
 function backToDashboard() {
   showScreen("dashboard");
   renderDashboard();
+}
+
+function initDashCompletion() {
+  document.getElementById("completion-gift").addEventListener("click", () => goToCard("mystery"));
 }
 
 /* progress hearts (persistent widget, hidden on entrance/loading/reveal/final/ending) */
@@ -682,17 +761,47 @@ function initMystery() {
    11. LETTER
    ============================================================ */
 function renderLetter() {
-  document.getElementById("letter-sal").textContent = CONTENT.letter.salutation;
+  const sal = document.getElementById("letter-sal");
   const body = document.getElementById("letter-body");
+  const signoff = document.getElementById("letter-signoff");
+  const signature = document.getElementById("letter-signature");
+  const nextBtn = document.getElementById("letter-next");
+
+  sal.textContent = CONTENT.letter.salutation;
+  sal.classList.remove("show");
+  sal.classList.add("letter-reveal");
+
   body.innerHTML = "";
-  CONTENT.letter.body.forEach(p => {
+  const paraEls = CONTENT.letter.body.map(p => {
     const para = document.createElement("p");
     para.textContent = p;
+    para.className = "letter-reveal";
     body.appendChild(para);
+    return para;
   });
-  document.getElementById("letter-signoff").textContent = CONTENT.letter.signoff;
-  document.getElementById("letter-signature").textContent = CONTENT.letter.signature;
-  document.getElementById("letter-next").textContent = CONTENT.letter.button;
+
+  signoff.textContent = CONTENT.letter.signoff;
+  signoff.classList.remove("show");
+  signoff.classList.add("letter-reveal");
+
+  signature.textContent = CONTENT.letter.signature;
+  signature.classList.remove("show");
+  signature.classList.add("letter-reveal");
+
+  nextBtn.textContent = CONTENT.letter.button;
+  nextBtn.classList.remove("show");
+
+  const reduced = prefersReducedMotion();
+  const sequence = [sal, ...paraEls, signoff, signature];
+  const gap = reduced ? 0 : 750;
+  let delay = reduced ? 0 : 400;
+
+  sequence.forEach(el => {
+    setTimeout(() => el.classList.add("show"), delay);
+    delay += gap;
+  });
+
+  setTimeout(() => nextBtn.classList.add("show"), delay + (reduced ? 0 : 600));
 }
 function initLetter() {
   document.getElementById("letter-next").addEventListener("click", () => {
@@ -803,6 +912,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initCake();
   initPrediction();
   initMystery();
+  initDashCompletion();
   initLetter();
   initFinal();
   initEnding();

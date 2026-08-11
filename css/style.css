@@ -39,6 +39,8 @@ html, body {
 body {
   min-height: 100vh;
   background: radial-gradient(ellipse at top, #fff7f0 0%, var(--ivory) 55%, #f6e9ef 100%);
+  background-position: 0px 0px;
+  transition: background-position 1.4s ease;
   position: relative;
 }
 
@@ -239,32 +241,47 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 .error-box .err-sub { color: var(--plum-soft); margin-top: 4px; }
 
 /* ============================================================
-   3. REVEAL
+   3. REVEAL — cinematic title-sequence treatment
    ============================================================ */
 .reveal-line {
   font-family: var(--font-display);
   font-size: 54px;
   line-height: 1.05;
   font-weight: 700;
-  color: var(--plum);
+  color: #F3E9F5;
   opacity: 0;
   transform: translateY(20px) scale(0.9);
 }
 .reveal-line.show { animation: revealPop 0.6s cubic-bezier(.2,.9,.3,1.3) forwards; }
 @keyframes revealPop { to { opacity: 1; transform: translateY(0) scale(1); } }
-.reveal-line:nth-child(2) { color: var(--peach); }
-.reveal-line:nth-child(3) { color: var(--lavender-dark, #8B6FB3); }
-.reveal-line:nth-child(4) { color: var(--gold); font-size: 40px; }
+.reveal-line:nth-child(2) { color: #F4C9A0; }
+.reveal-line:nth-child(3) { color: #D9BFF2; }
+.reveal-line:nth-child(4) {
+  color: var(--gold);
+  font-size: 44px;
+  text-shadow: 0 0 18px rgba(232, 178, 62, 0.6);
+}
+.reveal-line:nth-child(4).show { animation: revealBurst 0.7s cubic-bezier(.2,.9,.3,1.3) forwards; }
+@keyframes revealBurst {
+  0% { opacity: 0; transform: translateY(20px) scale(0.7); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.15); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 .reveal-sub {
   font-size: 17px;
-  color: var(--plum-soft);
+  color: #E4D3EA;
   margin-top: 16px;
   opacity: 0;
 }
 .reveal-sub.show { opacity: 1; transition: opacity 0.6s ease 0.3s; }
 
-.cake-emoji { font-size: 56px; }
+#screen-reveal {
+  background: radial-gradient(ellipse at center, #3a1f42 0%, #241228 75%);
+}
+#screen-reveal .cake-emoji { opacity: 0; font-size: 56px; }
+#screen-reveal .cake-emoji.show { animation: revealPop 0.5s ease forwards; }
+#screen-reveal .btn { box-shadow: 0 8px 24px rgba(232, 178, 62, 0.35); }
 
 /* confetti + balloons */
 .confetti-piece {
@@ -359,6 +376,36 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 }
 
 .unlock-count { margin-top: 14px; font-weight: 700; color: var(--plum-soft); font-size: 14px; }
+
+.dash-completion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 10px 10px;
+  animation: completionIn 0.6s ease;
+}
+@keyframes completionIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.completion-msg {
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--plum);
+}
+.completion-glow {
+  filter: drop-shadow(0 0 14px rgba(232, 178, 62, 0.55));
+  animation: giftPulse 1.8s ease-in-out infinite;
+}
+@keyframes giftPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.dash-completion .gift-box {
+  background: none;
+  padding: 0;
+}
 
 .wish-banner {
   margin-top: 16px;
@@ -636,6 +683,15 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 .letter-paper .signoff { font-family: var(--font-display); font-size: 24px; margin-top: 10px; }
 .letter-paper .signature { font-family: var(--font-display); font-size: 22px; color: var(--plum-soft); }
 
+.letter-reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.letter-reveal.show { opacity: 1; transform: translateY(0); }
+#letter-next { opacity: 0; pointer-events: none; transition: opacity 0.6s ease; }
+#letter-next.show { opacity: 1; pointer-events: auto; }
+
 /* ============================================================
    12. FINAL SURPRISE
    ============================================================ */
@@ -677,8 +733,37 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 /* ============================================================
    utility: fade transition between screens
    ============================================================ */
-.screen { animation: screenFade 0.4s ease; }
-@keyframes screenFade { from { opacity: 0; } to { opacity: 1; } }
+.screen-out {
+  animation: screenOut 0.26s ease forwards;
+}
+@keyframes screenOut {
+  to { opacity: 0; transform: scale(0.97) translateY(-8px); }
+}
+.screen-in {
+  opacity: 0;
+  transform: scale(0.98) translateY(12px);
+}
+.screen-in-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
 
 /* small helper text */
 .hint { font-size: 12.5px; color: var(--plum-soft); font-weight: 600; }
+
+/* ============================================================
+   ACCESSIBILITY: respect prefers-reduced-motion
+   Collapses all animation/transition durations to near-zero.
+   JS also gates the heaviest offenders (ambient generator, confetti,
+   balloons, staggered reveals) directly so reduced-motion visitors
+   don't pay the CPU cost of animations they'll never see move.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
