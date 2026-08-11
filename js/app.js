@@ -106,6 +106,19 @@ function riseBalloons(count = 8) {
   }
 }
 
+/* ---------- sound effects ---------- */
+const sfxCache = {};
+function playSfx(name) {
+  const src = CONTENT.sfx && CONTENT.sfx[name];
+  if (!src) return; // no file configured — silently skip
+  try {
+    if (!sfxCache[name]) sfxCache[name] = new Audio(src);
+    const audio = sfxCache[name].cloneNode();
+    audio.volume = 0.55;
+    audio.play().catch(() => {});
+  } catch (e) { /* ignore playback errors */ }
+}
+
 /* ---------- music ---------- */
 function startMusicIfAny() {
   if (state.musicStarted) return;
@@ -249,15 +262,24 @@ function isUnlocked() {
 
 function pad2(n) { return String(n).padStart(2, "0"); }
 
+function transitionToEntranceWithWelcome() {
+  const sub = document.getElementById("gate-sub");
+  const reduced = prefersReducedMotion();
+  sub.textContent = CONTENT.gate.afterUnlockHint;
+  setTimeout(() => {
+    sub.textContent = CONTENT.gate.welcomeLine;
+  }, reduced ? 0 : 1000);
+  setTimeout(() => {
+    showScreen("entrance");
+  }, reduced ? 0 : 2200);
+}
+
 function tickCountdown() {
   const diff = getUnlockEpoch() - nowMs();
   if (diff <= 0) {
     clearInterval(gateInterval);
     gateInterval = null;
-    document.getElementById("gate-sub").textContent = CONTENT.gate.afterUnlockHint;
-    setTimeout(() => {
-      showScreen("entrance");
-    }, 900);
+    transitionToEntranceWithWelcome();
     return;
   }
   const totalSec = Math.floor(diff / 1000);
@@ -299,7 +321,7 @@ async function runGateCheck() {
   document.getElementById("gate-sub").textContent = CONTENT.gate.sub;
 
   if (isUnlocked()) {
-    showScreen("entrance");
+    transitionToEntranceWithWelcome();
     return;
   }
   tickCountdown();
@@ -321,6 +343,7 @@ function initEntrance() {
   btn.textContent = CONTENT.entrance.button;
   btn.addEventListener("click", () => {
     startMusicIfAny();
+    playSfx("envelope");
     const burst = document.getElementById("entrance-burst");
     burst.classList.add("pop");
     burstConfetti(40);
@@ -396,6 +419,7 @@ function runReveal() {
     setTimeout(() => {
       div.classList.add("show");
       if (isLast) {
+        playSfx("reveal");
         burstConfetti(70);
         riseBalloons(10);
       }
@@ -444,13 +468,31 @@ function renderDashboard() {
   completion.classList.add("hidden");
 
   grid.innerHTML = "";
+  const doneRequired = REQUIRED.filter(id => state.visited[id]);
+  const nextUpId = REQUIRED[doneRequired.length]; // undefined once all required are done
+
   CONTENT.dashboard.cards.forEach(card => {
     const btn = document.createElement("button");
     const isMystery = card.id === "mystery";
     const done = isMystery ? state.mysteryOpened : state.visited[card.id];
-    const locked = isMystery && !allRequiredDone();
 
-    btn.className = "dash-card btn--wiggle" + (done ? " done" : "") + (locked ? " locked" : "");
+    let locked;
+    if (isMystery) {
+      locked = !allRequiredDone();
+    } else {
+      // Sequential unlock: a required card is locked unless everything
+      // before it in REQUIRED has already been visited (or it's done itself).
+      const reqIndex = REQUIRED.indexOf(card.id);
+      const priorAllDone = REQUIRED.slice(0, reqIndex).every(id => state.visited[id]);
+      locked = !done && !priorAllDone;
+    }
+    const isNextUp = !isMystery && card.id === nextUpId;
+
+    btn.className = "dash-card btn--wiggle"
+      + (done ? " done" : "")
+      + (locked ? " locked" : "")
+      + (isNextUp ? " next-up" : "");
+    btn.dataset.cardId = card.id;
     btn.innerHTML = `<span class="icon">${card.icon}</span><span>${card.label}</span>`;
     btn.disabled = locked;
     btn.addEventListener("click", () => goToCard(card.id));
@@ -471,7 +513,11 @@ function allRequiredDone() {
 }
 
 function markVisited(id) {
-  if (REQUIRED.includes(id)) state.visited[id] = true;
+  if (REQUIRED.includes(id)) {
+    const wasVisited = state.visited[id];
+    state.visited[id] = true;
+    if (!wasVisited) playSfx("unlock");
+  }
   renderProgressHearts();
 }
 
@@ -495,6 +541,32 @@ function backToDashboard() {
 
 function initDashCompletion() {
   document.getElementById("completion-gift").addEventListener("click", () => goToCard("mystery"));
+}
+
+/* ---------- secret interaction: triple-tap the bow ---------- */
+let secretTapCount = 0;
+let secretTapTimer = null;
+function initSecret() {
+  const bow = document.getElementById("secret-bow");
+  bow.addEventListener("click", () => {
+    secretTapCount++;
+    bow.classList.remove("pulse");
+    void bow.offsetWidth; // restart animation
+    bow.classList.add("pulse");
+    clearTimeout(secretTapTimer);
+    secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 1500);
+    if (secretTapCount >= 3) {
+      secretTapCount = 0;
+      document.getElementById("secret-msg").textContent = CONTENT.secret.message;
+      document.getElementById("secret-modal").classList.remove("hidden");
+    }
+  });
+  document.getElementById("secret-close").addEventListener("click", () => {
+    document.getElementById("secret-modal").classList.add("hidden");
+  });
+  document.getElementById("secret-modal").addEventListener("click", (e) => {
+    if (e.target.id === "secret-modal") document.getElementById("secret-modal").classList.add("hidden");
+  });
 }
 
 /* progress hearts (persistent widget, hidden on entrance/loading/reveal/final/ending) */
@@ -533,10 +605,13 @@ function initMessage() {
 /* ============================================================
    5. ADORE (flip cards)
    ============================================================ */
+const adoreFlipped = new Set();
+
 function renderAdore() {
+  adoreFlipped.clear();
   const grid = document.getElementById("adore-grid");
   grid.innerHTML = "";
-  CONTENT.adore.forEach((item) => {
+  CONTENT.adore.forEach((item, i) => {
     const card = document.createElement("div");
     card.className = "flip-card";
     card.innerHTML = `
@@ -544,12 +619,34 @@ function renderAdore() {
         <div class="flip-face flip-front"><span>${item.emoji}</span><span>Tap to reveal ✨</span></div>
         <div class="flip-face flip-back">${item.text}</div>
       </div>`;
-    card.addEventListener("click", () => card.classList.toggle("flipped"));
+    card.addEventListener("click", () => {
+      card.classList.toggle("flipped");
+      if (card.classList.contains("flipped")) {
+        adoreFlipped.add(i);
+        updateAdoreGate();
+      }
+    });
     grid.appendChild(card);
   });
+  updateAdoreGate();
 }
+
+function updateAdoreGate() {
+  const total = CONTENT.adore.length;
+  const seen = adoreFlipped.size;
+  const backBtn = document.getElementById("adore-back");
+  const hint = document.getElementById("adore-hint");
+  const allSeen = seen >= total;
+
+  backBtn.disabled = !allSeen;
+  backBtn.classList.toggle("locked-btn", !allSeen);
+  hint.textContent = allSeen ? "all revealed ✓" : `${seen}/${total} revealed`;
+  hint.classList.toggle("done", allSeen);
+}
+
 function initAdoreBack() {
   document.getElementById("adore-back").addEventListener("click", () => {
+    if (adoreFlipped.size < CONTENT.adore.length) return;
     markVisited("adore");
     backToDashboard();
   });
@@ -558,7 +655,10 @@ function initAdoreBack() {
 /* ============================================================
    6. MEMORIES (polaroids)
    ============================================================ */
+const memoriesViewed = new Set();
+
 function renderMemories() {
+  memoriesViewed.clear();
   const desk = document.getElementById("polaroid-desk");
   desk.innerHTML = "";
   CONTENT.memories.forEach((m, i) => {
@@ -566,11 +666,26 @@ function renderMemories() {
     p.className = "polaroid";
     p.style.transform = `rotate(${m.rotate}deg)`;
     p.innerHTML = `<div class="photo-slot">${m.src ? `<img src="${m.src}" alt="Memory ${i + 1}" onerror="this.parentElement.innerHTML='📷'">` : "📷"}</div>`;
-    p.addEventListener("click", () => openLightbox(m));
+    p.addEventListener("click", () => openLightbox(m, i));
     desk.appendChild(p);
   });
+  updateMemoriesGate();
 }
-function openLightbox(m) {
+
+function updateMemoriesGate() {
+  const total = CONTENT.memories.length;
+  const seen = memoriesViewed.size;
+  const backBtn = document.getElementById("memories-back");
+  const hint = document.getElementById("memories-hint");
+  const allSeen = seen >= total;
+
+  backBtn.disabled = !allSeen;
+  backBtn.classList.toggle("locked-btn", !allSeen);
+  hint.textContent = allSeen ? "all photos seen ✓" : `${seen}/${total} photos viewed`;
+  hint.classList.toggle("done", allSeen);
+}
+
+function openLightbox(m, index) {
   const lb = document.getElementById("lightbox");
   document.getElementById("lightbox-photo").innerHTML = m.src
     ? `<img src="${m.src}" alt="" onerror="this.parentElement.innerHTML='📷'">`
@@ -578,9 +693,14 @@ function openLightbox(m) {
   document.getElementById("lightbox-caption").textContent = m.caption;
   document.getElementById("lightbox-meta").textContent = m.meta || "";
   lb.classList.remove("hidden");
+  if (typeof index === "number") {
+    memoriesViewed.add(index);
+    updateMemoriesGate();
+  }
 }
 function initMemoriesBack() {
   document.getElementById("memories-back").addEventListener("click", () => {
+    if (memoriesViewed.size < CONTENT.memories.length) return; // guard against disabled-state edge cases
     markVisited("memories");
     backToDashboard();
   });
@@ -596,12 +716,15 @@ function initMemoriesBack() {
    7. QUIZ
    ============================================================ */
 let quizIndex = 0;
-function resetQuiz() { quizIndex = 0; renderQuizQuestion(); }
+let quizLocked = false;
+function resetQuiz() { quizIndex = 0; quizLocked = false; renderQuizQuestion(); }
 function renderQuizQuestion() {
+  quizLocked = false;
   const q = CONTENT.quiz[quizIndex];
   document.getElementById("quiz-progress").textContent = `QUESTION ${quizIndex + 1} / ${CONTENT.quiz.length}`;
   document.getElementById("quiz-q").textContent = q.q;
   document.getElementById("quiz-reaction").textContent = "";
+  document.getElementById("quiz-reaction").className = "quiz-reaction";
   const optWrap = document.getElementById("quiz-options");
   optWrap.innerHTML = "";
   q.options.forEach((opt, i) => {
@@ -609,19 +732,34 @@ function renderQuizQuestion() {
     btn.className = "quiz-opt";
     btn.textContent = opt;
     btn.addEventListener("click", () => {
-      optWrap.querySelectorAll(".quiz-opt").forEach(b => b.classList.remove("picked"));
-      btn.classList.add("picked");
-      document.getElementById("quiz-reaction").textContent = q.reaction;
-      setTimeout(() => {
-        quizIndex++;
-        if (quizIndex < CONTENT.quiz.length) {
-          renderQuizQuestion();
-        } else {
-          document.getElementById("quiz-q").textContent = "That's it — you passed your own personality test.";
-          optWrap.innerHTML = "";
-          document.getElementById("quiz-reaction").textContent = "Suspiciously well, honestly.";
-        }
-      }, 900);
+      if (quizLocked) return;
+      const reactionEl = document.getElementById("quiz-reaction");
+
+      if (i === q.correct) {
+        quizLocked = true;
+        optWrap.querySelectorAll(".quiz-opt").forEach(b => b.disabled = true);
+        btn.classList.add("picked", "correct");
+        reactionEl.textContent = q.reaction;
+        reactionEl.className = "quiz-reaction correct-text";
+        playSfx("unlock");
+        setTimeout(() => {
+          quizIndex++;
+          if (quizIndex < CONTENT.quiz.length) {
+            renderQuizQuestion();
+          } else {
+            document.getElementById("quiz-q").textContent = "That's it — you passed your own personality test.";
+            optWrap.innerHTML = "";
+            reactionEl.textContent = "Suspiciously well, honestly.";
+            reactionEl.className = "quiz-reaction correct-text";
+          }
+        }, 1000);
+      } else {
+        const wrongPool = CONTENT.quizWrongReactions;
+        reactionEl.textContent = wrongPool[Math.floor(Math.random() * wrongPool.length)];
+        reactionEl.className = "quiz-reaction wrong-text";
+        btn.classList.add("shake");
+        setTimeout(() => btn.classList.remove("shake"), 450);
+      }
     });
     optWrap.appendChild(btn);
   });
@@ -640,6 +778,12 @@ function resetCake() {
   document.getElementById("cake-after").classList.add("hidden");
   document.getElementById("smoke").classList.remove("show");
 
+  const backBtn = document.getElementById("cake-back");
+  backBtn.disabled = true;
+  backBtn.classList.add("locked-btn");
+  document.getElementById("cake-hint").textContent = "make a wish first";
+  document.getElementById("cake-hint").classList.remove("done");
+
   const candleWrap = document.getElementById("candles");
   candleWrap.innerHTML = "";
   const n = Math.min(CONTENT.cake.candleCount, 24); // visually cap at 24 for layout
@@ -652,19 +796,38 @@ function resetCake() {
 }
 function initCake() {
   document.getElementById("cake-btn").addEventListener("click", () => {
+    playSfx("candle");
     document.querySelectorAll("#candles .candle").forEach((c, i) => {
-      setTimeout(() => c.classList.add("out"), i * 25);
+      setTimeout(() => c.classList.add("out"), i * 45);
     });
     document.getElementById("smoke").classList.add("show");
     document.getElementById("cake-btn").classList.add("hidden");
     burstConfetti(35);
+
+    const candleCount = document.querySelectorAll("#candles .candle").length;
+    const flashDelay = candleCount * 45 + 500;
+    const flash = document.getElementById("cake-flash");
+
     setTimeout(() => {
+      flash.classList.add("show");
+    }, flashDelay);
+
+    setTimeout(() => {
+      flash.classList.remove("show");
       document.getElementById("after-title").textContent = CONTENT.cake.afterTitle;
       document.getElementById("after-sub").textContent = CONTENT.cake.afterSub;
       document.getElementById("cake-after").classList.remove("hidden");
-    }, 900);
+
+      const backBtn = document.getElementById("cake-back");
+      backBtn.disabled = false;
+      backBtn.classList.remove("locked-btn");
+      const hint = document.getElementById("cake-hint");
+      hint.textContent = "wish saved ✓";
+      hint.classList.add("done");
+    }, flashDelay + 450);
   });
   document.getElementById("cake-back").addEventListener("click", () => {
+    if (document.getElementById("cake-back").disabled) return;
     markVisited("cake");
     backToDashboard();
   });
@@ -678,6 +841,12 @@ function resetPrediction() {
   document.getElementById("predict-btn").textContent = CONTENT.prediction.button;
   document.getElementById("predict-loading").classList.add("hidden");
   document.getElementById("predict-result").classList.add("hidden");
+
+  const backBtn = document.getElementById("predict-back");
+  backBtn.disabled = true;
+  backBtn.classList.add("locked-btn");
+  document.getElementById("predict-hint").textContent = "run your prediction first";
+  document.getElementById("predict-hint").classList.remove("done");
 }
 function initPrediction() {
   document.getElementById("predict-btn").addEventListener("click", () => {
@@ -699,16 +868,37 @@ function initPrediction() {
       document.getElementById("predict-result-intro").textContent = CONTENT.prediction.resultIntro;
       const ul = document.getElementById("predict-items");
       ul.innerHTML = "";
-      CONTENT.prediction.resultItems.forEach(it => {
+      const confirmBtn = document.getElementById("predict-confirm");
+      confirmBtn.classList.add("hidden");
+
+      const reduced = prefersReducedMotion();
+      const itemGap = reduced ? 0 : 500;
+      const itemEls = CONTENT.prediction.resultItems.map(it => {
         const li = document.createElement("li");
         li.textContent = it;
+        li.className = "predict-item";
         ul.appendChild(li);
+        return li;
       });
-      document.getElementById("predict-confirm").textContent = CONTENT.prediction.button2;
-      burstConfetti(25);
+      itemEls.forEach((li, i) => {
+        setTimeout(() => li.classList.add("show"), i * itemGap);
+      });
+      setTimeout(() => {
+        confirmBtn.textContent = CONTENT.prediction.button2;
+        confirmBtn.classList.remove("hidden");
+        burstConfetti(25);
+
+        const backBtn = document.getElementById("predict-back");
+        backBtn.disabled = false;
+        backBtn.classList.remove("locked-btn");
+        const hint = document.getElementById("predict-hint");
+        hint.textContent = "prediction complete ✓";
+        hint.classList.add("done");
+      }, itemEls.length * itemGap + (reduced ? 0 : 300));
     }, 300 + CONTENT.prediction.loadingSteps.length * 500 + 400);
   });
   document.getElementById("predict-back").addEventListener("click", () => {
+    if (document.getElementById("predict-back").disabled) return;
     markVisited("prediction");
     backToDashboard();
   });
@@ -744,6 +934,7 @@ function initMystery() {
     } else {
       box.classList.add("opened");
       box.textContent = "🎉";
+      playSfx("gift");
       burstConfetti(80);
       riseBalloons(6);
       state.mysteryOpened = true;
@@ -867,11 +1058,34 @@ function initFinal() {
    ENDING
    ============================================================ */
 function runEnding() {
+  const beat1 = document.getElementById("ending-beat1");
+  const beat2 = document.getElementById("ending-beat2");
+  const final = document.getElementById("ending-final");
+  const replay = document.getElementById("ending-replay");
+
+  beat1.textContent = CONTENT.ending.beat1;
+  beat2.textContent = CONTENT.ending.beat2;
   document.getElementById("ending-title").textContent = CONTENT.ending.title;
   document.getElementById("ending-sub").textContent = CONTENT.ending.sub;
-  document.getElementById("ending-replay").textContent = CONTENT.ending.replay;
-  burstConfetti(90);
-  riseBalloons(12);
+  replay.textContent = CONTENT.ending.replay;
+
+  beat1.classList.remove("show");
+  beat2.classList.remove("show");
+  final.classList.add("hidden");
+  replay.classList.add("hidden");
+
+  const reduced = prefersReducedMotion();
+  const t = reduced ? [0, 0, 0, 0] : [300, 1700, 3400, 5200];
+
+  setTimeout(() => beat1.classList.add("show"), t[0]);
+  setTimeout(() => { beat1.classList.remove("show"); beat2.classList.add("show"); }, t[1]);
+  setTimeout(() => {
+    beat2.classList.remove("show");
+    final.classList.remove("hidden");
+    burstConfetti(90);
+    riseBalloons(12);
+  }, t[2]);
+  setTimeout(() => replay.classList.remove("hidden"), t[3]);
 }
 function initEnding() {
   document.getElementById("ending-replay").addEventListener("click", () => {
@@ -913,6 +1127,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initPrediction();
   initMystery();
   initDashCompletion();
+  initSecret();
   initLetter();
   initFinal();
   initEnding();

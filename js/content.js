@@ -19,6 +19,7 @@ const CONTENT = {
     title: "Something's coming... 🎀",
     sub: "A little birthday world for Anuradha unlocks in:",
     afterUnlockHint: "It's time. 👀",
+    welcomeLine: "Welcome to your 24th year.",
     // Manual override: open the site with ?unlock=KEY appended to the URL
     // to skip the countdown entirely, regardless of real time. Only use
     // this yourself if the timer breaks — the normal link stays locked
@@ -70,6 +71,13 @@ const CONTENT = {
       { id: "mystery",  icon: "🎁", label: "Mystery Box", locked: true },
     ],
     bonus: { id: "quiz", icon: "🤔", label: "Bonus: Do You Even Know Yourself?" },
+  },
+
+  // ---------- Secret interaction ----------
+  // Tap the 🎀 in the control room corner 3 times to find this. Not
+  // announced anywhere — genuinely hidden, not a password.
+  secret: {
+    message: "You found the secret bow. There's no prize. I just liked knowing you'd tap on things you weren't told to.",
   },
 
   // ---------- Wish of the visit ----------
@@ -167,6 +175,16 @@ const CONTENT = {
 
   // ---------- 7. Bonus quiz ----------
   // EDIT ME: swap questions/options for real inside jokes.
+  // Wrong answers pull a random line from quizWrongReactions and let her
+  // try again — only the correct pick advances to the next question.
+  quizWrongReactions: [
+    "Absolutely not.",
+    "Bold guess. Wrong, but bold.",
+    "That's... not it.",
+    "Try again, birthday girl.",
+    "No, but I respect the confidence.",
+    "Denied. Pick again.",
+  ],
   quiz: [
     {
       q: "What makes Anuradha happiest?",
@@ -265,9 +283,24 @@ const CONTENT = {
 
   // ---------- Ending ----------
   ending: {
+    beat1: "And that's it.",
+    beat2: "Except it isn't.",
     title: `Happy Birthday, ${'Anuradha'}. 💗`,
     sub: "Thanks for existing.",
     replay: "Replay the chaos ↻",
+  },
+
+  // ---------- Sound effects ----------
+  // Drop short files into assets/audio/sfx/ and set paths here. Any left
+  // blank simply play nothing — nothing breaks if you skip some or all.
+  // Keep them SHORT (under ~1s) and subtle — clicks/chimes, not jingles.
+  sfx: {
+    click: "",     // general button taps
+    envelope: "",  // entrance envelope opening
+    unlock: "",    // dashboard card completed
+    candle: "",    // blowing out candles
+    gift: "",      // mystery box opening
+    reveal: "",    // big birthday reveal burst
   },
 
   // ---------- Music ----------

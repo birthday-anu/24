@@ -67,6 +67,7 @@
 <!-- ============ 4. DASHBOARD ============ -->
 <section id="screen-dashboard" class="screen hidden">
   <div class="dashboard-frame screen-inner">
+    <button class="secret-bow" id="secret-bow" aria-label="">🎀</button>
     <div class="dashboard-title" id="dash-title"></div>
     <div class="dashboard-subtitle" id="dash-subtitle"></div>
     <div class="card-grid" id="dash-grid"></div>
@@ -96,11 +97,11 @@
   <div class="screen-inner" style="max-width:640px;">
     <div class="mini-header">
       <button class="back-link" onclick="document.getElementById('memories-back').click()">← Back</button>
-      <span class="hint">tap a photo</span>
+      <span class="hint" id="memories-hint">tap a photo</span>
     </div>
     <div class="mini-title">📸 Our Memories</div>
     <div class="polaroid-desk" id="polaroid-desk"></div>
-    <button class="btn btn--soft" id="memories-back">Back to control room</button>
+    <button class="btn btn--soft" id="memories-back" disabled>Back to control room</button>
   </div>
 </section>
 
@@ -113,10 +114,21 @@
   </div>
 </div>
 
+<div class="lightbox hidden" id="secret-modal">
+  <div class="lightbox-card">
+    <div class="secret-icon">🎀</div>
+    <div class="secret-msg" id="secret-msg"></div>
+    <button class="btn btn--soft" id="secret-close">Close</button>
+  </div>
+</div>
+
 <!-- ============ CAKE ============ -->
 <section id="screen-cake" class="screen hidden">
   <div class="screen-inner">
-    <div class="mini-header"><button class="back-link" onclick="document.getElementById('cake-back').click()">← Back</button></div>
+    <div class="mini-header">
+      <button class="back-link" onclick="document.getElementById('cake-back').click()">← Back</button>
+      <span class="hint" id="cake-hint">make a wish first</span>
+    </div>
     <div class="mini-title" id="cake-title"></div>
     <div class="cake-scene">
       <div class="candles" id="candles"></div>
@@ -128,17 +140,21 @@
       <div class="lock-title" id="after-title"></div>
       <div class="lock-sub" id="after-sub"></div>
     </div>
-    <button class="btn btn--soft" id="cake-back">Back to control room</button>
+    <button class="btn btn--soft" id="cake-back" disabled>Back to control room</button>
+    <div class="cake-flash" id="cake-flash"></div>
   </div>
 </section>
 
 <!-- ============ ADORE ============ -->
 <section id="screen-adore" class="screen hidden">
   <div class="screen-inner" style="max-width:640px;">
-    <div class="mini-header"><button class="back-link" onclick="document.getElementById('adore-back').click()">← Back</button></div>
+    <div class="mini-header">
+      <button class="back-link" onclick="document.getElementById('adore-back').click()">← Back</button>
+      <span class="hint" id="adore-hint">tap each card</span>
+    </div>
     <div class="mini-title">💗 Things I Adore</div>
     <div class="adore-grid" id="adore-grid"></div>
-    <button class="btn btn--soft" id="adore-back">Back to control room</button>
+    <button class="btn btn--soft" id="adore-back" disabled>Back to control room</button>
   </div>
 </section>
 
@@ -160,7 +176,10 @@
 <!-- ============ PREDICTION ============ -->
 <section id="screen-prediction" class="screen hidden">
   <div class="screen-inner">
-    <div class="mini-header"><button class="back-link" onclick="document.getElementById('predict-back').click()">← Back</button></div>
+    <div class="mini-header">
+      <button class="back-link" onclick="document.getElementById('predict-back').click()">← Back</button>
+      <span class="hint" id="predict-hint">run your prediction first</span>
+    </div>
     <div class="mini-title">🔮 Birthday Prediction Machine</div>
     <button class="btn btn--wiggle" id="predict-btn"></button>
     <ul class="predict-steps hidden" id="predict-loading"></ul>
@@ -170,7 +189,7 @@
       <ul id="predict-items"></ul>
       <button class="btn" id="predict-confirm" style="margin-top:14px;" onclick="document.getElementById('predict-back').click()"></button>
     </div>
-    <button class="btn btn--soft" id="predict-back">Back to control room</button>
+    <button class="btn btn--soft" id="predict-back" disabled>Back to control room</button>
   </div>
 </section>
 
@@ -217,9 +236,13 @@
 <!-- ============ ENDING ============ -->
 <section id="screen-ending" class="screen hidden">
   <div class="screen-inner">
-    <div class="mini-title" id="ending-title"></div>
-    <div id="ending-sub"></div>
-    <button class="btn btn--soft" id="ending-replay" style="margin-top:20px;"></button>
+    <div class="ending-beat" id="ending-beat1"></div>
+    <div class="ending-beat" id="ending-beat2"></div>
+    <div class="ending-final hidden" id="ending-final">
+      <div class="mini-title" id="ending-title"></div>
+      <div id="ending-sub"></div>
+      <button class="btn btn--soft hidden" id="ending-replay" style="margin-top:24px;"></button>
+    </div>
   </div>
 </section>
 

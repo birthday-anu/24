@@ -49,6 +49,7 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
+  touch-action: manipulation;
 }
 
 button:focus-visible, a:focus-visible, [tabindex]:focus-visible {
@@ -124,6 +125,20 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
   color: var(--plum);
   border: 2px solid var(--blush);
 }
+
+.btn:disabled,
+.locked-btn {
+  opacity: 0.5;
+  cursor: default;
+  filter: grayscale(0.3);
+}
+.btn:disabled:hover,
+.locked-btn:hover {
+  transform: none;
+  box-shadow: var(--shadow-card);
+}
+#memories-hint { transition: color 0.3s ease; }
+#memories-hint.done { color: var(--gold); font-weight: 700; }
 
 .btn--wiggle:hover { animation: wiggle 0.4s ease; }
 @keyframes wiggle {
@@ -318,6 +333,28 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
   padding: 26px 20px;
   box-shadow: var(--shadow-soft);
   width: 100%;
+  position: relative;
+}
+.secret-bow {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  font-size: 18px;
+  opacity: 0.45;
+  padding: 8px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.secret-bow:hover { opacity: 0.7; }
+.secret-bow.pulse { animation: correctPop 0.3s ease; }
+
+.secret-icon { font-size: 40px; }
+.secret-msg {
+  font-family: var(--font-display);
+  font-size: 21px;
+  color: var(--plum);
+  line-height: 1.35;
+  margin: 10px 0 16px;
 }
 .dashboard-title { font-family: var(--font-display); font-size: 26px; letter-spacing: 1px; }
 .dashboard-subtitle { font-size: 12px; letter-spacing: 3px; color: var(--plum-soft); font-weight: 700; margin-top: -6px; }
@@ -347,7 +384,49 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
   transition: transform 0.15s ease, border-color 0.15s ease;
   position: relative;
 }
-.dash-card .icon { font-size: 28px; }
+.dash-card .icon { font-size: 28px; display: inline-block; }
+
+/* Per-card idle "preview" animations — small, tactile, tied to the card's
+   subject rather than a generic wiggle. Skipped once locked (grayscale
+   already communicates "not yet") and settle once done. */
+.dash-card[data-card-id="memories"]:not(.locked):not(.done) .icon {
+  animation: previewTilt 3.4s ease-in-out infinite;
+}
+@keyframes previewTilt {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+.dash-card[data-card-id="cake"]:not(.locked):not(.done) .icon {
+  animation: previewFlicker 0.9s ease-in-out infinite alternate;
+}
+@keyframes previewFlicker {
+  from { transform: scale(1); opacity: 0.92; }
+  to { transform: scale(1.08); opacity: 1; }
+}
+.dash-card[data-card-id="adore"]:not(.locked):not(.done) .icon {
+  animation: previewPulse 1.6s ease-in-out infinite;
+}
+@keyframes previewPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.dash-card[data-card-id="prediction"]:not(.locked):not(.done) .icon {
+  animation: previewSpin 4s linear infinite;
+}
+@keyframes previewSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.dash-card[data-card-id="message"]:not(.locked):not(.done) .icon {
+  animation: previewBob 2.4s ease-in-out infinite;
+}
+@keyframes previewBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.dash-card[data-card-id="mystery"]:not(.locked) .icon {
+  animation: previewPulse 1.4s ease-in-out infinite;
+}
 .dash-card:hover:not(.locked) { transform: translateY(-3px); border-color: var(--peach); }
 .dash-card.done { border-color: var(--gold); background: linear-gradient(160deg, #fffdf5, #fff6e2); }
 .dash-card.done::after {
@@ -361,6 +440,15 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
   opacity: 0.55;
   cursor: default;
   filter: grayscale(0.4);
+}
+.dash-card.next-up {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(232, 178, 62, 0.18), var(--shadow-card);
+  animation: nextUpGlow 1.8s ease-in-out infinite;
+}
+@keyframes nextUpGlow {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(232, 178, 62, 0.18), var(--shadow-card); }
+  50% { box-shadow: 0 0 0 5px rgba(232, 178, 62, 0.32), var(--shadow-card); }
 }
 
 .dash-bonus {
@@ -465,7 +553,11 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
   color: var(--plum-soft);
   font-weight: 700;
   font-size: 14px;
-  padding: 6px 10px;
+  padding: 12px 10px;
+  margin: -12px -10px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .mini-title { font-family: var(--font-display); font-size: 30px; }
 
@@ -595,7 +687,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
   background: #fff;
   border: 2px solid var(--blush);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
+  min-height: 44px;
   font-weight: 600;
   font-size: 14px;
   text-align: left;
@@ -603,7 +696,17 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 }
 .quiz-opt:hover { border-color: var(--peach); }
 .quiz-opt.picked { border-color: var(--gold); background: #FFFAF0; }
+.quiz-opt.correct { border-color: var(--gold); background: #FFF6DE; animation: correctPop 0.4s ease; }
+.quiz-opt.shake { animation: shake 0.4s ease; border-color: #C0546B; }
+@keyframes correctPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+.quiz-opt:disabled { cursor: default; opacity: 0.85; }
 .quiz-reaction { margin-top: 12px; font-size: 13.5px; color: var(--plum-soft); font-weight: 600; min-height: 18px; }
+.quiz-reaction.wrong-text { color: #C0546B; }
+.quiz-reaction.correct-text { color: var(--plum); }
 .quiz-progress { font-size: 12px; color: var(--plum-soft); margin-bottom: 8px; font-weight: 700; letter-spacing: 1px; }
 
 /* ============================================================
@@ -612,8 +715,19 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 .cake-scene { position: relative; height: 220px; display: flex; align-items: flex-end; justify-content: center; }
 .cake-body { font-size: 90px; position: relative; }
 .candles { position: absolute; top: -28px; left: 50%; transform: translateX(-50%); display: flex; gap: 3px; }
-.candle { font-size: 15px; position: relative; transition: opacity 0.4s ease; }
-.candle.out { opacity: 0.25; }
+.candle {
+  font-size: 15px;
+  position: relative;
+  transition: opacity 0.4s ease;
+  animation: candleFlicker 0.6s ease-in-out infinite alternate;
+}
+.candle:nth-child(2n) { animation-duration: 0.7s; }
+.candle:nth-child(3n) { animation-duration: 0.5s; }
+@keyframes candleFlicker {
+  from { transform: scale(1) rotate(-1deg); }
+  to { transform: scale(1.08) rotate(1deg); }
+}
+.candle.out { opacity: 0.25; animation: none; }
 .candle .flame { display: inline-block; }
 .candle.out .flame { display: none; }
 .smoke {
@@ -626,6 +740,18 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 .wish-saved { margin-top: 8px; }
 .wish-saved .lock-title { font-family: var(--font-display); font-size: 26px; }
 .wish-saved .lock-sub { color: var(--plum-soft); font-weight: 600; margin-top: 4px; }
+
+.cake-flash {
+  position: absolute;
+  inset: 0;
+  background: #1a0f22;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.35s ease;
+  border-radius: inherit;
+}
+.cake-flash.show { opacity: 0.88; }
 
 /* ============================================================
    9. PREDICTION
@@ -644,7 +770,14 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
 .prediction-result h3 { font-family: var(--font-display); font-size: 26px; }
 .prediction-result .intro { font-weight: 700; margin: 6px 0 10px; }
 .prediction-result ul { list-style: none; padding: 0; text-align: left; font-weight: 600; font-size: 14.5px; }
-.prediction-result li { padding: 5px 0; }
+.predict-item {
+  padding: 5px 0;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.predict-item.show { opacity: 1; transform: translateX(0); }
+#predict-confirm { transition: opacity 0.4s ease; }
 
 /* ============================================================
    10. MYSTERY BOX
@@ -729,6 +862,26 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; }
    ENDING
    ============================================================ */
 #screen-ending .mini-title { font-size: 34px; }
+.ending-beat {
+  font-family: var(--font-display);
+  font-size: 32px;
+  color: var(--plum);
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  text-align: center;
+  transition: opacity 0.7s ease;
+}
+.ending-beat.show { opacity: 1; }
+.ending-final {
+  opacity: 0;
+  animation: completionIn 0.8s ease forwards;
+}
+#ending-replay { opacity: 0; transition: opacity 0.6s ease; }
+#ending-replay:not(.hidden) { opacity: 1; }
 
 /* ============================================================
    utility: fade transition between screens
